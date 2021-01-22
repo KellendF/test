@@ -1,0 +1,51 @@
+version: "3"
+services:
+ db:
+   image: mysql/mysql-server:5.7
+   restart: always
+   container_name: 66nao_db
+   environment:
+     MYSQL_ROOT_PASSWORD: "123456"
+     MYSQL_USER: "root"
+     MYSQL_PASS: "123456"
+     CONTAINER_TIMEZONE: 'Asia/Shanghai'
+   volumes:
+     - "./db:/var/lib/mysql"
+     - "./conf/my.cnf:/etc/my.cnf"
+     - "./init:/docker-entrypoint-initdb.d/"
+   ports:
+     - "3316:3306"
+
+ web:
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    ports:
+      - 6688:6688
+      - 8866:8866
+    volumes:
+      - /portal/backend:/portal/backend
+    #command: python3 manage.py runserver --settings dev_settings 0.0.0.0:6688
+    #command: bash -c "uwsgi --ini /portal/cdp/uwsgi.ini"
+    command: bash -c "python3 manage.py runserver  0.0.0.0:6688"
+
+ nginx:
+   restart: always
+   build:
+     context: ./nginx
+     dockerfile: Dockerfile
+   privileged: true
+   depends_on:
+     - web
+   ports:
+     - 8082:8082
+     - 8087:8087
+     - 443:443
+     - 82:80
+   volumes:
+     - /home/nginx/log:/var/log/nginx
+     - /portal/testHtml:/portal/testHtml
+     - /portal/backend:/portal/backend
+     - /portal/backend/nginx/nginx.conf:/usr/local/nginx/conf/nginx.conf
